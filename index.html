@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aura Pulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #EDEEF8;
+      --surface: #FFFFFF;
+      --surface-alt: #F4F5FC;
+      --border: #D8DAEE;
+      --border-faint: #ECEDF8;
+      --fg: #0D0F22;
+      --fg-muted: #565A8A;
+      --fg-ph: #A8ABCC;
+      --accent: #0BAECF;
+      --accent-dim: #D6F4FB;
+      --accent-fg: #FFFFFF;
+      --good: #0A7A55;
+      --good-dim: #E6F9F2;
+      --warn: #B45A00;
+      --warn-dim: #FFF4DE;
+      --danger: #C8283A;
+      --danger-dim: #FEF0F1;
+      --rev: #7B3AE4;
+      --rev-dim: #EDE5FF;
+      --hdr: #080A14;
+      --hdr-fg: #E8EEFF;
+      --hdr-mute: rgba(170,190,255,0.45);
+      --sh-sm: 0 1px 3px rgba(10,12,40,0.07), 0 1px 2px rgba(10,12,40,0.04);
+      --sh-md: 0 6px 20px rgba(10,12,40,0.13);
+      --r: 10px;
+      --r-sm: 6px;
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #080A14; --surface: #0D0F1E; --surface-alt: #131528;
+        --border: #1E2140; --border-faint: #131528;
+        --fg: #DDE2FF; --fg-muted: #7278B0; --fg-ph: #30355A;
+        --accent: #22CCEC; --accent-dim: #071A22; --accent-fg: #080A14;
+        --good: #2DD4A0; --good-dim: #021A12;
+        --warn: #FFC452; --warn-dim: #1A1000;
+        --danger: #F76C78; --danger-dim: #1C0608;
+        --rev: #A06BF0; --rev-dim: #120A2A;
+        --hdr: #050710; --hdr-fg: #DCE4FF; --hdr-mute: rgba(160,180,255,0.42);
+        --sh-sm: 0 1px 3px rgba(0,0,0,0.45); --sh-md: 0 6px 24px rgba(0,0,0,0.6);
+        color-scheme: dark;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #080A14; --surface: #0D0F1E; --surface-alt: #131528;
+      --border: #1E2140; --border-faint: #131528;
+      --fg: #DDE2FF; --fg-muted: #7278B0; --fg-ph: #30355A;
+      --accent: #22CCEC; --accent-dim: #071A22; --accent-fg: #080A14;
+      --good: #2DD4A0; --good-dim: #021A12;
+      --warn: #FFC452; --warn-dim: #1A1000;
+      --danger: #F76C78; --danger-dim: #1C0608;
+      --rev: #A06BF0; --rev-dim: #120A2A;
+      --hdr: #050710; --hdr-fg: #DCE4FF; --hdr-mute: rgba(160,180,255,0.42);
+      --sh-sm: 0 1px 3px rgba(0,0,0,0.45); --sh-md: 0 6px 24px rgba(0,0,0,0.6);
+      color-scheme: dark;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      background: var(--bg);
+      color: var(--fg);
+    }
+
+    body { padding-left: 16px; padding-right: 16px; padding-block: 0; }
+
+    /* ── Header ── */
+    .hdr {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--hdr); color: var(--hdr-fg);
+      margin-left: -16px; margin-right: -16px;
+      padding-left: 20px; padding-right: 20px; padding-block: 0;
+      display: flex; align-items: center; height: 52px; gap: 16px;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.04), var(--sh-md);
+    }
+    .brand {
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px;
+      letter-spacing: -0.03em; display: flex; align-items: center;
+      gap: 8px; flex-shrink: 0; white-space: nowrap;
+    }
+    .brand-pulse {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: linear-gradient(135deg, #7B3AE4, #22CCEC);
+      box-shadow: 0 0 0 3px rgba(34,204,236,0.22); flex-shrink: 0;
+    }
+    .wk-nav { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+    .wk-label {
+      font-size: 12px; color: var(--hdr-mute);
+      font-variant-numeric: tabular-nums; min-width: 178px;
+      text-align: center; white-space: nowrap;
+    }
+    @media (max-width: 520px) { .wk-label { min-width: 0; display: none; } }
+    .hbtn {
+      background: none; border: 1px solid rgba(255,255,255,0.14);
+      color: var(--hdr-fg); cursor: pointer; height: 28px; border-radius: 5px;
+      padding: 0 9px; font-family: 'DM Sans', sans-serif; font-size: 12px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, border-color 0.15s; white-space: nowrap;
+    }
+    .hbtn.sq { width: 28px; padding: 0; }
+    .hbtn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.28); }
+
+    /* ── Timer bar ── */
+    .timer-bar {
+      position: sticky; top: 52px; z-index: 90;
+      background: var(--surface-alt); border-bottom: 1px solid var(--border);
+      margin-left: -16px; margin-right: -16px;
+      padding: 7px 20px; display: flex; align-items: center; gap: 10px;
+    }
+    .timer-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+      background: var(--accent); display: none;
+      animation: tblink 1.1s step-start infinite;
+    }
+    .timer-dot.on { display: block; }
+    @keyframes tblink { 50% { opacity: 0; } }
+    .timer-display {
+      font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600;
+      font-variant-numeric: tabular-nums; min-width: 72px;
+      color: var(--fg-muted); transition: color 0.15s;
+    }
+    .timer-display.running { color: var(--accent); }
+    .timer-hint { font-size: 11px; color: var(--fg-ph); margin-left: 2px; }
+    @media (max-width: 440px) { .timer-hint { display: none; } }
+    .tmbtn {
+      background: none; border: 1px solid var(--border); color: var(--fg);
+      cursor: pointer; height: 26px; padding: 0 11px; border-radius: 5px;
+      font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+      display: flex; align-items: center; gap: 5px;
+      transition: background 0.15s, border-color 0.15s, color 0.15s; white-space: nowrap;
+    }
+    .tmbtn:hover { background: var(--border-faint); border-color: var(--accent); color: var(--accent); }
+    .tmbtn.stop { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+    .tmbtn.ghost { border-color: transparent; color: var(--fg-muted); padding: 0 7px; }
+    .tmbtn.ghost:hover { border-color: var(--border); background: var(--border-faint); color: var(--fg); }
+
+    /* ── Main layout ── */
+    .main { max-width: 1080px; margin: 0 auto; padding-block: 18px 48px; }
+
+    /* ── Stats row ── */
+    .stats { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .stat {
+      display: flex; align-items: center; gap: 5px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 3px 13px; font-size: 12px;
+      color: var(--fg-muted); box-shadow: var(--sh-sm);
+      font-variant-numeric: tabular-nums;
+    }
+    .stat b { color: var(--fg); font-weight: 600; font-size: 13px; }
+    .stat.hi { border-color: var(--accent); }
+    .stat.hi b { color: var(--accent); }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); box-shadow: var(--sh-sm);
+      overflow: hidden; margin-bottom: 12px;
+    }
+    .card-hdr {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 15px; cursor: pointer; user-select: none;
+      transition: background 0.12s;
+    }
+    .card-hdr:hover { background: var(--border-faint); }
+    .card-title {
+      font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600;
+      flex: 1; display: flex; align-items: center; gap: 7px;
+    }
+    .tog {
+      width: 20px; height: 20px; background: var(--accent); color: var(--accent-fg);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 300; line-height: 1;
+      transition: transform 0.2s; flex-shrink: 0;
+    }
+    .card.open .tog { transform: rotate(45deg); }
+    .card-hint { font-size: 11px; color: var(--fg-muted); }
+    .card-body { display: none; padding: 12px 15px 15px; border-top: 1px solid var(--border); }
+    .card.open .card-body { display: block; }
+
+    /* ── Form grid ── */
+    .fgrid { display: grid; grid-template-columns: 140px 1fr 1fr; gap: 9px; margin-bottom: 10px; }
+    @media (max-width: 560px) {
+      .fgrid { grid-template-columns: 1fr 1fr; }
+      .fgrid .s2 { grid-column: span 2; }
+      .fgrid .s3 { grid-column: span 2; }
+    }
+    .s2 { grid-column: span 2; }
+    .s3 { grid-column: span 3; }
+
+    .ff { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .ff label {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--fg-muted);
+    }
+    .ff input, .ff select {
+      padding: 6px 9px; border: 1px solid var(--border);
+      border-radius: var(--r-sm); background: var(--bg); color: var(--fg);
+      font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s; width: 100%; min-width: 0;
+    }
+    .ff input::placeholder { color: var(--fg-ph); }
+    .ff input:focus, .ff select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 13%, transparent);
+    }
+    .ff-help {
+      font-size: 11px; color: var(--fg-muted); line-height: 1.55; margin-top: 1px;
+    }
+    .ff-help a { color: var(--accent); text-decoration: none; }
+    .ff-help a:hover { text-decoration: underline; }
+
+    .factions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
+    .ferr { font-size: 12px; color: var(--danger); flex: 1; min-width: 0; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 6px 16px; border: none; border-radius: var(--r-sm);
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: opacity 0.15s, background 0.15s;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .btn:hover { opacity: 0.86; }
+    .btn:active { opacity: 0.7; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-p { background: var(--accent); color: var(--accent-fg); }
+    .btn-g { background: transparent; border: 1px solid var(--border); color: var(--fg-muted); }
+    .btn-g:hover { background: var(--border-faint); opacity: 1; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+    /* ── Entries table ── */
+    .ehdr {
+      display: flex; align-items: center; padding: 10px 15px; gap: 10px;
+      background: var(--surface-alt); border-bottom: 1px solid var(--border); flex-wrap: wrap;
+    }
+    .ehdr .card-title { flex: 1; min-width: 100px; }
+    .ehdr-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+    .twrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      padding: 7px 12px; text-align: left; font-size: 10px; font-weight: 600;
+      color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.06em;
+      border-bottom: 1px solid var(--border); background: var(--surface-alt); white-space: nowrap;
+    }
+    th.rgt { text-align: right; }
+    tbody tr { border-bottom: 1px solid var(--border-faint); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--border-faint); }
+    tbody td { padding: 8px 12px; vertical-align: middle; min-width: 0; }
+    .cdt { white-space: nowrap; font-size: 12px; color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+    .ccl { font-weight: 500; }
+    .cpr { color: var(--fg-muted); font-size: 12px; }
+    .cjr { font-size: 12px; color: var(--accent); font-weight: 500; }
+    .cds { max-width: 220px; }
+    .cds .dt { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .chr { text-align: right; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .cat { text-align: right; white-space: nowrap; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .by { background: var(--good-dim); color: var(--good); }
+    .bn { background: var(--border-faint); color: var(--fg-muted); }
+    .br { background: var(--rev-dim); color: var(--rev); }
+    .ck-ok { color: var(--good); font-size: 12px; }
+    .ck-w  { color: var(--warn); font-size: 11px; }
+    .iab {
+      background: none; border: none; cursor: pointer; color: var(--fg-muted);
+      padding: 3px 5px; border-radius: 4px; font-size: 13px; opacity: 0;
+      transition: color 0.12s, background 0.12s, opacity 0.12s;
+    }
+    tbody tr:hover .iab { opacity: 1; }
+    .iab:hover { color: var(--fg); background: var(--border); }
+    .iab.del:hover { color: var(--danger); background: var(--danger-dim); }
+    tfoot td {
+      padding: 8px 12px; border-top: 2px solid var(--border);
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 11px;
+    }
+    .ftl { color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .ftn { text-align: right; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+    .day-sub td {
+      background: var(--surface-alt); padding: 4px 12px;
+      border-top: 1px solid var(--border); border-bottom: 2px solid var(--border);
+    }
+    .day-sub .dsl {
+      font-size: 10px; font-weight: 600; color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .day-sub .dsh {
+      text-align: right; font-family: 'Outfit', sans-serif; font-weight: 700;
+      font-size: 12px; color: var(--fg); font-variant-numeric: tabular-nums;
+    }
+    .empty { padding: 46px 20px; text-align: center; color: var(--fg-muted); }
+    .empty-ico { font-size: 34px; color: var(--border); display: block; margin-bottom: 10px; line-height: 1; }
+    .empty strong { display: block; color: var(--fg); font-size: 14px; margin-bottom: 4px; }
+    .empty p { font-size: 12px; }
+
+    /* ── Inline edit row ── */
+    .edit-row { display: none; }
+    .edit-row.on { display: table-row; }
+    .edit-row td { background: var(--accent-dim) !important; padding: 10px 14px; border-bottom: 2px solid var(--accent); }
+    .egrid { display: grid; grid-template-columns: 130px 1fr 1fr; gap: 8px; align-items: end; margin-bottom: 8px; }
+    @media (max-width: 560px) {
+      .egrid { grid-template-columns: 1fr 1fr; }
+      .egrid .es3 { grid-column: span 2; }
+    }
+    .es3 { grid-column: span 3; }
+
+    /* ── Submit helper ── */
+    .submsg {
+      background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-sm);
+      padding: 12px; font-size: 13px; line-height: 1.7; white-space: pre-wrap;
+      color: var(--fg); margin-bottom: 10px; font-family: 'DM Sans', sans-serif;
+    }
+    .sub-copy-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .copynote { font-size: 12px; color: var(--good); }
+
+    /* ── Toast ── */
+    .export-toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--fg); color: var(--bg);
+      padding: 9px 18px; border-radius: 20px;
+      font-size: 13px; font-weight: 500;
+      box-shadow: var(--sh-md);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+      white-space: nowrap; z-index: 500;
+    }
+    .export-toast.on { opacity: 1; }
+
+    /* ── Modal / overlay ── */
+    .overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(8,10,20,0.72); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .overlay[hidden] { display: none; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); width: 100%; max-width: 460px;
+      box-shadow: var(--sh-md); max-height: calc(100vh - 40px); overflow-y: auto;
+    }
+    .mhdr {
+      display: flex; align-items: center; padding: 12px 16px;
+      border-bottom: 1px solid var(--border); position: sticky; top: 0;
+      background: var(--surface); z-index: 1;
+    }
+    .mhdr-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; flex: 1; }
+    .mclose {
+      background: none; border: none; cursor: pointer; color: var(--fg-muted);
+      font-size: 15px; padding: 2px 6px; border-radius: 4px; line-height: 1;
+      transition: color 0.12s, background 0.12s;
+    }
+    .mclose:hover { color: var(--fg); background: var(--border); }
+    .mbody { padding: 16px; display: flex; flex-direction: column; gap: 13px; }
+    .mftr {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px; border-top: 1px solid var(--border); flex-wrap: wrap;
+    }
+    .help-note { font-size: 12px; color: var(--fg-muted); line-height: 1.65; }
+    .help-note.warn { color: var(--warn); }
+    .help-note strong { color: var(--fg); }
+
+    /* ── Accessibility / misc ── */
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="hdr" role="banner">
+  <div class="brand">
+    <span class="brand-pulse" aria-hidden="true"></span>
+    Aura Pulse
+  </div>
+  <nav class="wk-nav" aria-label="Week navigation">
+    <button class="hbtn sq" id="prevBtn" aria-label="Previous week">&#8592;</button>
+    <span class="wk-label" id="wkLabel" aria-live="polite"></span>
+    <button class="hbtn sq" id="nextBtn" aria-label="Next week">&#8594;</button>
+    <button class="hbtn" id="todayBtn">This week</button>
+    <button class="hbtn sq" id="settingsBtn" aria-label="Settings" title="Settings">&#9881;</button>
+    <button class="hbtn sq" id="themeBtn" aria-label="Toggle theme">&#9680;</button>
+  </nav>
+</header>
+
+<div class="timer-bar" role="region" aria-label="Timer">
+  <span class="timer-dot" id="timerDot" aria-hidden="true"></span>
+  <span class="timer-display" id="timerDisplay" aria-live="off">00:00:00</span>
+  <button class="tmbtn" id="timerToggle">&#9654; Start</button>
+  <button class="tmbtn ghost" id="timerReset" aria-label="Reset timer" hidden>&#8635;</button>
+  <span class="timer-hint">Stop to log hours automatically</span>
+</div>
+
+<main class="main" role="main">
+
+  <div class="stats" id="stats" aria-live="polite">
+    <div class="stat hi"><span>Total</span><b id="sTotal">0.00 h</b></div>
+    <div class="stat"><span>Billable</span><b id="sBill">0.00 h</b></div>
+    <div class="stat"><span>Non-billable</span><b id="sNonBill">0.00 h</b></div>
+    <div class="stat"><span>Needs review</span><b id="sRev">0.00 h</b></div>
+    <div class="stat"><span>Entries</span><b id="sCount">0</b></div>
+  </div>
+
+  <div class="card open" id="addCard">
+    <div class="card-hdr" id="addToggle" role="button" tabindex="0" aria-expanded="true" aria-controls="addBody">
+      <span class="card-title"><span class="tog" aria-hidden="true">+</span>Add time entry</span>
+      <span class="card-hint">Click to collapse</span>
+    </div>
+    <div class="card-body" id="addBody">
+      <div class="fgrid">
+        <div class="ff">
+          <label for="fDate">Work Date *</label>
+          <input type="date" id="fDate">
+        </div>
+        <div class="ff">
+          <label for="fClient">Client *</label>
+          <input type="text" id="fClient" placeholder="e.g. Acme Corp" list="dlClient" autocomplete="off">
+          <datalist id="dlClient"></datalist>
+        </div>
+        <div class="ff">
+          <label for="fProject">Project / Engagement *</label>
+          <input type="text" id="fProject" placeholder="e.g. Mobile App v2" list="dlProject" autocomplete="off">
+          <datalist id="dlProject"></datalist>
+        </div>
+        <div class="ff">
+          <label for="fJira">Jira Ticket / Link</label>
+          <input type="text" id="fJira" placeholder="AT-123">
+        </div>
+        <div class="ff s2">
+          <label for="fDesc">Work Description *</label>
+          <input type="text" id="fDesc" placeholder="What you did — clear enough for a client invoice">
+        </div>
+        <div class="ff">
+          <label for="fHours">Hours *</label>
+          <input type="text" id="fHours" placeholder="1.5 or =45/60" inputmode="decimal">
+        </div>
+        <div class="ff">
+          <label for="fBill">Billable?</label>
+          <select id="fBill">
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Needs review">Needs review</option>
+          </select>
+        </div>
+      </div>
+      <div class="factions">
+        <span class="ferr" id="ferr" role="alert"></span>
+        <button class="btn btn-g btn-sm" id="clearBtn" type="button">Clear</button>
+        <button class="btn btn-p" id="addBtn" type="button">Add Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="entriesCard">
+    <div class="ehdr">
+      <span class="card-title" style="cursor:default;">Time Entries</span>
+      <div class="ehdr-acts">
+        <button class="btn btn-g btn-sm" id="exportWeekBtn" type="button">&#8659; Week CSV</button>
+        <button class="btn btn-g btn-sm" id="exportAllBtn" type="button">&#8659; All CSV</button>
+        <button class="btn btn-g btn-sm" id="exportXlsxBtn" type="button">&#8659; Week XLSX</button>
+        <button class="btn btn-g btn-sm" id="sheetsBtn" type="button">&#8679; Google Sheets</button>
+      </div>
+    </div>
+    <div class="twrap">
+      <table id="tbl" aria-label="Time entries for the week">
+        <thead>
+          <tr>
+            <th>Date</th><th>Client</th><th>Project</th><th>Jira</th>
+            <th style="min-width:180px;">Description</th>
+            <th class="rgt">Hours</th><th>Billable</th><th>Check</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+        <tfoot id="tfoot"></tfoot>
+      </table>
+    </div>
+    <div id="emptyState" class="empty" hidden>
+      <span class="empty-ico" aria-hidden="true">&#9711;</span>
+      <strong>No entries this week</strong>
+      <p>Use the form above to log your first time entry.</p>
+    </div>
+  </div>
+
+  <div class="card" id="subCard">
+    <div class="card-hdr" id="subToggle" role="button" tabindex="0" aria-expanded="false" aria-controls="subBody">
+      <span class="card-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="flex-shrink:0"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Generate submission message
+      </span>
+      <span class="card-hint">Ready to submit?</span>
+    </div>
+    <div class="card-body" id="subBody">
+      <div class="submsg" id="submsg"></div>
+      <div class="sub-copy-row">
+        <button class="btn btn-p btn-sm" id="subCopyBtn" type="button">Copy message</button>
+        <span class="copynote" id="subCopyNote"></span>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div class="export-toast" id="exportToast" role="status" aria-live="polite"></div>
+
+<!-- Settings modal -->
+<div class="overlay" id="settingsOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="modal">
+    <div class="mhdr">
+      <span class="mhdr-title" id="settingsTitle">Settings</span>
+      <button class="mclose" id="settingsClose" aria-label="Close settings">&#10005;</button>
+    </div>
+    <div class="mbody">
+      <div class="ff">
+        <label for="sName">Your name</label>
+        <input type="text" id="sName" placeholder="Dallin Cummings" autocomplete="name">
+        <span class="ff-help">Used in filenames: 2026-10-27 - Your Name - Timesheet.csv</span>
+      </div>
+      <div class="ff">
+        <label for="sTimezone">Time zone</label>
+        <input type="text" id="sTimezone" placeholder="America/Denver" autocomplete="off">
+        <span class="ff-help">Shown in the submission message. Example: America/New_York</span>
+      </div>
+      <div class="ff">
+        <label for="sClientId">Google Sheets Client ID</label>
+        <input type="text" id="sClientId" placeholder="123456789-abc.apps.googleusercontent.com" autocomplete="off" spellcheck="false">
+        <span class="ff-help">
+          Required to push entries to Google Sheets.
+          <a href="https://console.cloud.google.com" target="_blank" rel="noopener">Open Google Cloud Console</a>
+          &rarr; APIs &amp; Services &rarr; Credentials &rarr; Create OAuth 2.0 Client ID (Web application).
+          Add this page&rsquo;s URL as an authorized JavaScript origin. Enable the Google Sheets API in the same project.
+        </span>
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="btn btn-p btn-sm" id="settingsSave">Save settings</button>
+      <button class="btn btn-g btn-sm" id="settingsCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Google Sheets push modal -->
+<div class="overlay" id="sheetsOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="sheetsTitle">
+  <div class="modal">
+    <div class="mhdr">
+      <span class="mhdr-title" id="sheetsTitle">Push to Google Sheets</span>
+      <button class="mclose" id="sheetsClose" aria-label="Close">&#10005;</button>
+    </div>
+    <div class="mbody">
+      <p class="help-note">Find your Sheet ID in the URL:<br><code style="font-size:11px;color:var(--accent);">…/spreadsheets/d/<strong>SHEET_ID_HERE</strong>/edit</code></p>
+      <div class="ff">
+        <label for="sheetsId">Sheet ID</label>
+        <input type="text" id="sheetsId" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" autocomplete="off" spellcheck="false">
+      </div>
+      <p class="help-note">
+        This will write <strong id="sheetsPushCount">0</strong> entries to the <em>Time Entries</em> tab starting at row 10,
+        and fill in your name, week start date, and time zone in the header cells.
+      </p>
+      <p class="help-note warn" id="sheetsWarn" hidden>&#9888;&nbsp;Existing data in rows 10 and below will be overwritten.</p>
+    </div>
+    <div class="mftr">
+      <button class="btn btn-p btn-sm" id="sheetsPushBtn">Authorize &amp; Push</button>
+      <button class="btn btn-g btn-sm" id="sheetsCancel">Cancel</button>
+      <span id="sheetsNote" style="font-size:12px;color:var(--fg-muted);flex:1;min-width:0;"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  /* ── State ── */
+  let entries  = [];
+  let weekStart = getWeekStart(new Date());
+  let theme    = null;
+  let editId   = null;
+  let settings = { name: '', timezone: '', gClientId: '' };
+
+  /* Timer */
+  let timerRunning = false;
+  let timerBaseMs  = 0;
+  let timerRefTs   = null;
+  let timerInterval = null;
+
+  /* Google Sheets */
+  let gisLoaded = false;
+  let gisClient = null;
+
+  /* ── Persistence ── */
+  function save()      { try { localStorage.setItem('atc2_e', JSON.stringify(entries)); } catch(_) {} }
+  function saveTheme() { try { localStorage.setItem('atc2_t', theme || ''); } catch(_) {} }
+  function saveWeek()  { try { localStorage.setItem('atc2_w', weekStart.toISOString()); } catch(_) {} }
+  function saveSett()  { try { localStorage.setItem('atc2_s', JSON.stringify(settings)); } catch(_) {} }
+  function saveTimer() {
+    try { localStorage.setItem('atc2_timer', JSON.stringify({ running: timerRunning, base: timerBaseMs, ref: timerRefTs })); } catch(_) {}
+  }
+
+  function load() {
+    try { const r = localStorage.getItem('atc2_e'); if (r) entries = JSON.parse(r); } catch(_) { entries = []; }
+    try { theme = localStorage.getItem('atc2_t') || null; } catch(_) {}
+    try { const w = localStorage.getItem('atc2_w'); if (w) { const d = new Date(w); if (!isNaN(d)) weekStart = d; } } catch(_) {}
+    try { const s = localStorage.getItem('atc2_s'); if (s) settings = { ...settings, ...JSON.parse(s) }; } catch(_) {}
+    try {
+      const t = localStorage.getItem('atc2_timer');
+      if (t) {
+        const d = JSON.parse(t);
+        timerBaseMs = d.base || 0;
+        if (d.running && d.ref) { timerRunning = true; timerRefTs = d.ref; }
+      }
+    } catch(_) {}
+  }
+
+  /* ── Date helpers ── */
+  function getWeekStart(d) {
+    const dt = new Date(d); dt.setHours(0,0,0,0);
+    const day = dt.getDay(); dt.setDate(dt.getDate() - (day === 0 ? 6 : day - 1)); return dt;
+  }
+  function weekEnd(s) { const d = new Date(s); d.setDate(d.getDate() + 6); return d; }
+  function toYMD(d)   { return d instanceof Date ? d.toISOString().slice(0,10) : d; }
+  function todayYMD() { return toYMD(new Date()); }
+  function inWeek(ymd, ws) {
+    const d = new Date(ymd + 'T00:00:00');
+    const e = weekEnd(ws); e.setHours(23,59,59,999); return d >= ws && d <= e;
+  }
+  function fmtDisp(ymd) {
+    const [,m,d] = ymd.split('-');
+    return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1] + ' ' + +d;
+  }
+  function fmtWeekRange(ws) {
+    const we = weekEnd(ws);
+    const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return M[ws.getMonth()] + ' ' + ws.getDate() + ' – ' + M[we.getMonth()] + ' ' + we.getDate() + ', ' + we.getFullYear();
+  }
+
+  /* ── Hours helpers ── */
+  function evalHours(raw) {
+    if (!raw) return null;
+    let s = raw.trim(); if (s.startsWith('=')) s = s.slice(1);
+    if (!/^[\d\s\+\-\*\/\.\(\)]+$/.test(s)) return null;
+    try {
+      const v = Function('"use strict";return(' + s + ')')();
+      if (typeof v === 'number' && isFinite(v) && v > 0 && v <= 24) return Math.round(v * 100000) / 100000;
+    } catch(_) {}
+    return null;
+  }
+  function fmtH(h) { return (+h).toFixed(2); }
+  function uid()   { return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+
+  function check(e) {
+    const w = [];
+    if (!e.date)        w.push('Missing date');
+    if (!e.client)      w.push('Missing client');
+    if (!e.project)     w.push('Missing project');
+    if (!e.description) w.push('Missing description');
+    if (isNaN(+e.hours) || +e.hours <= 0) w.push('Invalid hours');
+    return w;
+  }
+
+  function wkEntries() {
+    return entries.filter(e => inWeek(e.date, weekStart)).sort((a,b) => a.date.localeCompare(b.date));
+  }
+
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── Timer ── */
+  function timerMs() {
+    return timerRunning ? timerBaseMs + (Date.now() - timerRefTs) : timerBaseMs;
+  }
+
+  function fmtTimer(ms) {
+    const s   = Math.floor(ms / 1000);
+    const h   = Math.floor(s / 3600);
+    const min = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return String(h).padStart(2,'0') + ':' + String(min).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+  }
+
+  function updateTimerDisplay() {
+    const display = document.getElementById('timerDisplay');
+    const toggleBtn = document.getElementById('timerToggle');
+    const resetBtn  = document.getElementById('timerReset');
+    const dot       = document.getElementById('timerDot');
+    const ms        = timerMs();
+    display.textContent = fmtTimer(ms);
+    display.classList.toggle('running', timerRunning);
+    dot.classList.toggle('on', timerRunning);
+    if (timerRunning) {
+      toggleBtn.innerHTML = '&#9646;&#9646; Stop';
+      toggleBtn.classList.add('stop');
+      resetBtn.hidden = true;
+    } else {
+      toggleBtn.innerHTML = '&#9654; Start';
+      toggleBtn.classList.remove('stop');
+      resetBtn.hidden = (ms === 0);
+    }
+  }
+
+  function toggleTimer() {
+    if (timerRunning) {
+      timerBaseMs += Date.now() - timerRefTs;
+      timerRunning = false;
+      timerRefTs   = null;
+      clearInterval(timerInterval); timerInterval = null;
+      saveTimer(); updateTimerDisplay();
+      if (timerBaseMs > 0) {
+        const h       = timerBaseMs / 3600000;
+        const rounded = Math.round(h * 100) / 100;
+        document.getElementById('fHours').value = String(rounded);
+        const addCard = document.getElementById('addCard');
+        if (!addCard.classList.contains('open')) {
+          addCard.classList.add('open');
+          document.getElementById('addToggle').setAttribute('aria-expanded', 'true');
+          const hint = document.getElementById('addToggle').querySelector('.card-hint');
+          if (hint) hint.textContent = 'Click to collapse';
+        }
+        document.getElementById('fDesc').focus();
+      }
+    } else {
+      timerRunning = true;
+      timerRefTs   = Date.now();
+      timerInterval = setInterval(updateTimerDisplay, 250);
+      saveTimer(); updateTimerDisplay();
+    }
+  }
+
+  function resetTimer() {
+    clearInterval(timerInterval); timerInterval = null;
+    timerRunning = false; timerBaseMs = 0; timerRefTs = null;
+    saveTimer(); updateTimerDisplay();
+  }
+
+  /* ── Theme ── */
+  function applyTheme() {
+    const root = document.documentElement;
+    if (theme === 'dark')       root.setAttribute('data-theme','dark');
+    else if (theme === 'light') root.setAttribute('data-theme','light');
+    else                        root.removeAttribute('data-theme');
+  }
+
+  /* ── Render ── */
+  function refreshLists() {
+    const cls = [...new Set(entries.map(e=>e.client).filter(Boolean))];
+    const prs = [...new Set(entries.map(e=>e.project).filter(Boolean))];
+    document.getElementById('dlClient').innerHTML  = cls.map(c=>`<option value="${esc(c)}">`).join('');
+    document.getElementById('dlProject').innerHTML = prs.map(p=>`<option value="${esc(p)}">`).join('');
+  }
+
+  function render() {
+    document.getElementById('wkLabel').textContent = fmtWeekRange(weekStart);
+    const we   = wkEntries();
+    const tbody = document.getElementById('tbody');
+    const tfoot = document.getElementById('tfoot');
+    const empty = document.getElementById('emptyState');
+
+    if (we.length === 0) {
+      tbody.innerHTML = ''; tfoot.innerHTML = ''; empty.hidden = false;
+    } else {
+      empty.hidden = true;
+      // Group by date
+      const dateGroups = {};
+      const dateOrder = [];
+      for (const e of we) {
+        if (!dateGroups[e.date]) { dateGroups[e.date] = []; dateOrder.push(e.date); }
+        dateGroups[e.date].push(e);
+      }
+      let html = '';
+      for (const date of dateOrder) {
+        const dayEntries = dateGroups[date];
+        for (const e of dayEntries) {
+          const warns  = check(e);
+          const ckHtml = warns.length === 0
+            ? '<span class="ck-ok" title="All fields complete">&#10003;</span>'
+            : `<span class="ck-w" title="${esc(warns.join(', '))}">&#9888; ${warns.length}</span>`;
+          const bClass = e.billable === 'Yes' ? 'by' : e.billable === 'No' ? 'bn' : 'br';
+          html += `<tr data-id="${esc(e.id)}">
+            <td class="cdt">${esc(fmtDisp(e.date))}</td>
+            <td class="ccl">${esc(e.client)}</td>
+            <td class="cpr">${esc(e.project)}</td>
+            <td class="cjr">${esc(e.jira||'—')}</td>
+            <td class="cds"><span class="dt" title="${esc(e.description)}">${esc(e.description)}</span></td>
+            <td class="chr">${fmtH(e.hours)}</td>
+            <td><span class="badge ${bClass}">${esc(e.billable)}</span></td>
+            <td>${ckHtml}</td>
+            <td class="cat">
+              <button class="iab ebtn" data-id="${esc(e.id)}" title="Edit" aria-label="Edit">&#9998;</button>
+              <button class="iab del dbtn" data-id="${esc(e.id)}" title="Delete" aria-label="Delete">&#10005;</button>
+            </td>
+          </tr>`;
+        }
+        const dayTotal = dayEntries.reduce((s,e) => s + (+e.hours||0), 0);
+        html += `<tr class="day-sub">
+          <td colspan="5" class="dsl">${esc(fmtDisp(date))} — ${dayEntries.length} ${dayEntries.length === 1 ? 'entry' : 'entries'}</td>
+          <td class="dsh">${fmtH(dayTotal)}</td>
+          <td colspan="3"></td>
+        </tr>`;
+      }
+      tbody.innerHTML = html;
+      const total = we.reduce((s,e)=>s+(+e.hours||0),0);
+      const bill  = we.filter(e=>e.billable==='Yes').reduce((s,e)=>s+(+e.hours||0),0);
+      tfoot.innerHTML = `<tr>
+        <td colspan="5" class="ftl">Weekly totals</td>
+        <td class="ftn">${fmtH(total)}</td>
+        <td colspan="3" style="color:var(--fg-muted);font-size:11px;font-weight:400;">${fmtH(bill)} billable</td>
+      </tr>`;
+    }
+
+    const all  = wkEntries();
+    const tot  = all.reduce((s,e)=>s+(+e.hours||0),0);
+    const bill = all.filter(e=>e.billable==='Yes').reduce((s,e)=>s+(+e.hours||0),0);
+    const nb   = all.filter(e=>e.billable==='No').reduce((s,e)=>s+(+e.hours||0),0);
+    const rev  = all.filter(e=>e.billable==='Needs review').reduce((s,e)=>s+(+e.hours||0),0);
+    document.getElementById('sTotal').textContent   = fmtH(tot)  + ' h';
+    document.getElementById('sBill').textContent    = fmtH(bill) + ' h';
+    document.getElementById('sNonBill').textContent = fmtH(nb)   + ' h';
+    document.getElementById('sRev').textContent     = fmtH(rev)  + ' h';
+    document.getElementById('sCount').textContent   = all.length;
+
+    renderSubmit();
+    refreshLists();
+  }
+
+  function renderSubmit() {
+    const we     = wkEntries();
+    const monStr = toYMD(weekStart);
+    const sunStr = toYMD(weekEnd(weekStart));
+    const name   = settings.name || '[Your Name]';
+    const revItems = we.filter(e=>e.billable==='Needs review');
+    const openQ  = revItems.length
+      ? revItems.map(e=>`  • ${e.date}  ${e.client} / ${e.project}${e.jira?' ('+e.jira+')':''}: billing classification needed`).join('\n')
+      : 'none';
+    document.getElementById('submsg').textContent =
+      `My time for the week ${monStr} through ${sunStr} is ready for review: [timesheet link]\n\nOpen questions: ${openQ}\n\nTimesheet file: ${monStr} - ${name} - Timesheet`;
+  }
+
+  /* ── Add / edit / delete ── */
+  function addEntry() {
+    const err  = document.getElementById('ferr');
+    err.textContent = '';
+    const date    = document.getElementById('fDate').value;
+    const client  = document.getElementById('fClient').value.trim();
+    const project = document.getElementById('fProject').value.trim();
+    const jira    = document.getElementById('fJira').value.trim();
+    const desc    = document.getElementById('fDesc').value.trim();
+    const rawH    = document.getElementById('fHours').value.trim();
+    const bill    = document.getElementById('fBill').value;
+
+    if (!date)    { err.textContent = 'Work date is required.';        document.getElementById('fDate').focus();   return; }
+    if (!client)  { err.textContent = 'Client is required.';           document.getElementById('fClient').focus(); return; }
+    if (!project) { err.textContent = 'Project is required.';          document.getElementById('fProject').focus();return; }
+    if (!desc)    { err.textContent = 'Work description is required.'; document.getElementById('fDesc').focus();   return; }
+    const h = evalHours(rawH);
+    if (h === null) { err.textContent = 'Hours: enter a number (1.5) or formula (=45/60).'; document.getElementById('fHours').focus(); return; }
+
+    entries.push({ id: uid(), date, client, project, jira, description: desc, hours: String(h), billable: bill });
+    save();
+    const entryWk = getWeekStart(new Date(date + 'T00:00:00'));
+    if (toYMD(entryWk) !== toYMD(weekStart)) { weekStart = entryWk; saveWeek(); }
+    document.getElementById('fJira').value  = '';
+    document.getElementById('fDesc').value  = '';
+    document.getElementById('fHours').value = '';
+    document.getElementById('fDesc').focus();
+    render();
+  }
+
+  function clearForm() {
+    ['fClient','fProject','fJira','fDesc','fHours'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fDate').value  = todayYMD();
+    document.getElementById('fBill').value  = 'Yes';
+    document.getElementById('ferr').textContent = '';
+  }
+
+  function deleteEntry(id) { entries = entries.filter(e=>e.id!==id); save(); render(); }
+
+  function startEdit(id) {
+    if (editId) cancelEdit();
+    const e = entries.find(x=>x.id===id); if (!e) return;
+    editId = id;
+    const row = document.querySelector(`tr[data-id="${id}"]`); if (!row) return;
+    const er = document.createElement('tr');
+    er.className = 'edit-row on'; er.id = 'er_' + id;
+    er.innerHTML = `<td colspan="9">
+      <div class="egrid">
+        <div class="ff"><label>Date</label><input type="date" id="ef_dt" value="${esc(e.date)}"></div>
+        <div class="ff"><label>Client</label><input type="text" id="ef_cl" value="${esc(e.client)}" list="dlClient"></div>
+        <div class="ff"><label>Project</label><input type="text" id="ef_pr" value="${esc(e.project)}" list="dlProject"></div>
+        <div class="ff"><label>Jira</label><input type="text" id="ef_jr" value="${esc(e.jira||'')}"></div>
+        <div class="ff es3"><label>Description</label><input type="text" id="ef_ds" value="${esc(e.description)}"></div>
+        <div class="ff"><label>Hours</label><input type="text" id="ef_hr" value="${esc(e.hours)}"></div>
+        <div class="ff"><label>Billable?</label>
+          <select id="ef_bl">
+            <option value="Yes"${e.billable==='Yes'?' selected':''}>Yes</option>
+            <option value="No"${e.billable==='No'?' selected':''}>No</option>
+            <option value="Needs review"${e.billable==='Needs review'?' selected':''}>Needs review</option>
+          </select>
+        </div>
+      </div>
+      <div class="factions" style="justify-content:flex-start;">
+        <span class="ferr" id="ef_err" role="alert"></span>
+        <button class="btn btn-p btn-sm" id="ef_save">Save</button>
+        <button class="btn btn-g btn-sm" id="ef_cancel">Cancel</button>
+      </div>
+    </td>`;
+    row.after(er);
+    document.getElementById('ef_save').addEventListener('click', saveEdit);
+    document.getElementById('ef_cancel').addEventListener('click', cancelEdit);
+    document.getElementById('ef_dt').focus();
+  }
+
+  function saveEdit() {
+    const e = entries.find(x=>x.id===editId); if (!e) return;
+    const err = document.getElementById('ef_err');
+    const h   = evalHours(document.getElementById('ef_hr').value);
+    if (h === null) { err.textContent = 'Invalid hours.'; document.getElementById('ef_hr').focus(); return; }
+    e.date        = document.getElementById('ef_dt').value;
+    e.client      = document.getElementById('ef_cl').value.trim();
+    e.project     = document.getElementById('ef_pr').value.trim();
+    e.jira        = document.getElementById('ef_jr').value.trim();
+    e.description = document.getElementById('ef_ds').value.trim();
+    e.hours       = String(h);
+    e.billable    = document.getElementById('ef_bl').value;
+    editId = null; save(); render();
+  }
+
+  function cancelEdit() {
+    editId = null;
+    const er = document.querySelector('.edit-row'); if (er) er.remove(); render();
+  }
+
+  /* ── Export: CSV ── */
+  function buildCsv(all) {
+    const rows = all ? [...entries].sort((a,b)=>a.date.localeCompare(b.date)) : wkEntries();
+    const hdr  = ['Work date','Client','Project / engagement','Jira ticket / link','Work description','Hours','Billable?'];
+    const lines = [hdr.join(',')];
+    for (const e of rows) {
+      const cols = [e.date, e.client, e.project, e.jira||'', e.description, fmtH(e.hours), e.billable];
+      lines.push(cols.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(','));
+    }
+    return lines.join('\r\n');
+  }
+
+  function csvFilename(all) {
+    const namePart = settings.name ? ' - ' + settings.name : '';
+    return all
+      ? `aura-timesheet-all${namePart}.csv`
+      : `${toYMD(weekStart)}${namePart} - Timesheet.csv`;
+  }
+
+  function downloadCsv(all) {
+    const rows = all ? entries : wkEntries();
+    if (!rows.length) { showToast('No entries to export'); return; }
+    const csv      = buildCsv(all);
+    const filename = csvFilename(all);
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('Downloaded ' + filename);
+  }
+
+  /* ── Export: XLSX ── */
+  function downloadXlsx(all) {
+    if (typeof XLSX === 'undefined') { showToast('Spreadsheet library still loading — try again'); return; }
+    const rows = all ? [...entries].sort((a,b)=>a.date.localeCompare(b.date)) : wkEntries();
+    if (!rows.length) { showToast('No entries to export'); return; }
+
+    /* Sheet 1 — entries */
+    const eData = [
+      ['Work date','Client','Project / engagement','Jira ticket / link','Work description','Hours','Billable?'],
+      ...rows.map(e => [e.date, e.client, e.project, e.jira||'', e.description, parseFloat(fmtH(e.hours)), e.billable])
+    ];
+    const ws1 = XLSX.utils.aoa_to_sheet(eData);
+    ws1['!cols']       = [12,18,24,16,36,8,12].map(w => ({wch: w}));
+    ws1['!autofilter'] = { ref: 'A1:G1' };
+
+    /* Sheet 2 — summary */
+    const map = {};
+    for (const e of rows) {
+      const k = e.client + '\0' + e.project;
+      if (!map[k]) map[k] = { client: e.client, project: e.project, total:0, bill:0, nb:0, rev:0 };
+      const h = parseFloat(e.hours) || 0;
+      map[k].total += h;
+      if      (e.billable === 'Yes')          map[k].bill += h;
+      else if (e.billable === 'No')           map[k].nb   += h;
+      else                                    map[k].rev  += h;
+    }
+    const sRows = Object.values(map).sort((a,b) => b.total - a.total);
+    const tot   = sRows.reduce((acc,r) => ({
+      total: acc.total+r.total, bill: acc.bill+r.bill, nb: acc.nb+r.nb, rev: acc.rev+r.rev
+    }), {total:0,bill:0,nb:0,rev:0});
+
+    const sData = [
+      ['Client','Project / engagement','Total hours','Billable','Non-billable','Needs review'],
+      ...sRows.map(r => [r.client, r.project, +r.total.toFixed(2), +r.bill.toFixed(2), +r.nb.toFixed(2), +r.rev.toFixed(2)]),
+      ['TOTAL','', +tot.total.toFixed(2), +tot.bill.toFixed(2), +tot.nb.toFixed(2), +tot.rev.toFixed(2)]
+    ];
+    const ws2 = XLSX.utils.aoa_to_sheet(sData);
+    ws2['!cols'] = [20,26,12,10,12,12].map(w => ({wch: w}));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws1, 'Time Entries');
+    XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
+
+    const namePart = settings.name ? ' - ' + settings.name : '';
+    const filename = all
+      ? `aura-timesheet-all${namePart}.xlsx`
+      : `${toYMD(weekStart)}${namePart} - Timesheet.xlsx`;
+    XLSX.writeFile(wb, filename);
+    showToast('Downloaded ' + filename);
+  }
+
+  /* ── Google Sheets push ── */
+  function loadGis(cb) {
+    if (gisLoaded) { cb(); return; }
+    const s  = document.createElement('script');
+    s.src    = 'https://accounts.google.com/gsi/client';
+    s.onload = () => { gisLoaded = true; cb(); };
+    s.onerror = () => {
+      document.getElementById('sheetsNote').textContent = 'Could not load Google auth library.';
+      document.getElementById('sheetsPushBtn').disabled = false;
+    };
+    document.head.appendChild(s);
+  }
+
+  function openSheetsDialog() {
+    if (!settings.gClientId) {
+      showToast('Set your Google Client ID in Settings first');
+      openSettingsModal(true);
+      return;
+    }
+    const we = wkEntries();
+    document.getElementById('sheetsPushCount').textContent = we.length;
+    document.getElementById('sheetsWarn').hidden = (we.length === 0);
+    document.getElementById('sheetsNote').textContent = '';
+    document.getElementById('sheetsPushBtn').disabled = false;
+    try { document.getElementById('sheetsId').value = localStorage.getItem('atc2_lastSheet') || ''; } catch(_) {}
+    document.getElementById('sheetsOverlay').hidden = false;
+    setTimeout(() => document.getElementById('sheetsId').focus(), 50);
+  }
+
+  function closeSheetsDialog() { document.getElementById('sheetsOverlay').hidden = true; }
+
+  function pushToSheets() {
+    const sheetId = document.getElementById('sheetsId').value.trim();
+    const note    = document.getElementById('sheetsNote');
+    const btn     = document.getElementById('sheetsPushBtn');
+    if (!sheetId)  { note.textContent = 'Enter a Sheet ID.'; return; }
+    const we = wkEntries();
+    if (!we.length){ note.textContent = 'No entries for this week.'; return; }
+    try { localStorage.setItem('atc2_lastSheet', sheetId); } catch(_) {}
+
+    note.textContent = 'Authorizing…';
+    btn.disabled = true;
+
+    loadGis(() => {
+      if (!gisClient || gisClient._clientId !== settings.gClientId) {
+        gisClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: settings.gClientId,
+          scope: 'https://www.googleapis.com/auth/spreadsheets',
+          callback: async (resp) => {
+            if (resp.error) {
+              note.textContent = 'Auth failed: ' + resp.error;
+              btn.disabled = false;
+              return;
+            }
+            await doSheetsPush(sheetId, resp.access_token, we, note, btn);
+          }
+        });
+        gisClient._clientId = settings.gClientId;
+      }
+      gisClient.requestAccessToken();
+    });
+  }
+
+  async function doSheetsPush(sheetId, token, rows, note, btn) {
+    const headers = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+    const base    = 'https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(sheetId);
+    const rng     = (r) => encodeURIComponent(r);
+
+    try {
+      note.textContent = 'Clearing existing rows…';
+      const clearResp = await fetch(`${base}/values/${rng("'Time Entries'!A10:G309")}:clear`, { method: 'POST', headers });
+      if (!clearResp.ok) throw new Error('Clear failed: ' + clearResp.status);
+
+      note.textContent = 'Writing ' + rows.length + ' entries…';
+      const values = rows.map(e => [e.date, e.client, e.project, e.jira||'', e.description, parseFloat(fmtH(e.hours)), e.billable]);
+      const putResp = await fetch(`${base}/values/${rng("'Time Entries'!A10")}?valueInputOption=USER_ENTERED`, {
+        method: 'PUT', headers,
+        body: JSON.stringify({ values })
+      });
+      if (!putResp.ok) throw new Error('Write failed: ' + putResp.status);
+
+      /* Fill header cells */
+      const data = [];
+      if (settings.name)     data.push({ range: "'Time Entries'!B3", values: [[settings.name]] });
+      if (settings.timezone) data.push({ range: "'Time Entries'!B4", values: [[settings.timezone]] });
+      data.push({ range: "'Time Entries'!F3", values: [[toYMD(weekStart)]] });
+      if (data.length) {
+        await fetch(`${base}/values:batchUpdate`, {
+          method: 'POST', headers,
+          body: JSON.stringify({ valueInputOption: 'USER_ENTERED', data })
+        });
+      }
+
+      note.textContent = '✓ Pushed ' + rows.length + ' entries!';
+      showToast('Pushed ' + rows.length + ' entries to Google Sheets');
+      setTimeout(closeSheetsDialog, 1600);
+    } catch (err) {
+      note.textContent = 'Error: ' + (err.message || String(err));
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  /* ── Settings modal ── */
+  function openSettingsModal(focusClientId) {
+    document.getElementById('sName').value     = settings.name;
+    document.getElementById('sTimezone').value = settings.timezone;
+    document.getElementById('sClientId').value = settings.gClientId;
+    document.getElementById('settingsOverlay').hidden = false;
+    const target = focusClientId ? 'sClientId' : 'sName';
+    setTimeout(() => document.getElementById(target).focus(), 50);
+  }
+
+  function closeSettingsModal() { document.getElementById('settingsOverlay').hidden = true; }
+
+  function saveSettingsModal() {
+    settings.name      = document.getElementById('sName').value.trim();
+    settings.timezone  = document.getElementById('sTimezone').value.trim();
+    settings.gClientId = document.getElementById('sClientId').value.trim();
+    gisClient = null; // force recreation if client ID changed
+    saveSett();
+    closeSettingsModal();
+    render();
+    showToast('Settings saved');
+  }
+
+  /* ── Toast ── */
+  let toastTimer = null;
+  function showToast(msg) {
+    const t = document.getElementById('exportToast');
+    t.textContent = msg; t.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('on'), 2600);
+  }
+
+  /* ── Copy helper ── */
+  function copyText(text, noteId) {
+    const note = noteId ? document.getElementById(noteId) : null;
+    const show = (ok) => { if (note) { note.textContent = ok ? 'Copied!' : 'Copy failed'; setTimeout(() => note.textContent = '', 2000); } };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => show(true), () => show(false));
+    } else {
+      try {
+        const ta = Object.assign(document.createElement('textarea'), { value: text });
+        Object.assign(ta.style, { position:'fixed', opacity:'0' });
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+        document.body.removeChild(ta); show(true);
+      } catch(_) { show(false); }
+    }
+  }
+
+  /* ── Collapse ── */
+  function wireCollapse(toggleId, cardId) {
+    const toggle = document.getElementById(toggleId);
+    const card   = document.getElementById(cardId);
+    toggle.addEventListener('click', () => {
+      const open = card.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', open);
+      const hint = toggle.querySelector('.card-hint');
+      if (hint) hint.textContent = open ? 'Click to collapse' : 'Click to expand';
+    });
+    toggle.addEventListener('keydown', ev => { if (ev.key==='Enter'||ev.key===' ') { ev.preventDefault(); toggle.click(); } });
+  }
+
+  /* ── Keyboard: close modals on Escape ── */
+  document.addEventListener('keydown', ev => {
+    if (ev.key !== 'Escape') return;
+    if (!document.getElementById('settingsOverlay').hidden) { closeSettingsModal(); return; }
+    if (!document.getElementById('sheetsOverlay').hidden)   { closeSheetsDialog();  return; }
+  });
+
+  /* ── Init ── */
+  function init() {
+    load(); applyTheme();
+    document.getElementById('fDate').value = todayYMD();
+
+    /* Week nav */
+    document.getElementById('prevBtn').addEventListener('click',  () => { weekStart.setDate(weekStart.getDate()-7); saveWeek(); render(); });
+    document.getElementById('nextBtn').addEventListener('click',  () => { weekStart.setDate(weekStart.getDate()+7); saveWeek(); render(); });
+    document.getElementById('todayBtn').addEventListener('click', () => { weekStart = getWeekStart(new Date()); saveWeek(); render(); });
+    document.getElementById('themeBtn').addEventListener('click', () => {
+      const t = document.documentElement.getAttribute('data-theme');
+      theme = !t ? 'dark' : t==='dark' ? 'light' : null; saveTheme(); applyTheme();
+    });
+
+    /* Settings */
+    document.getElementById('settingsBtn').addEventListener('click',    () => openSettingsModal(false));
+    document.getElementById('settingsClose').addEventListener('click',  closeSettingsModal);
+    document.getElementById('settingsCancel').addEventListener('click', closeSettingsModal);
+    document.getElementById('settingsSave').addEventListener('click',   saveSettingsModal);
+    document.getElementById('settingsOverlay').addEventListener('click', ev => { if (ev.target === ev.currentTarget) closeSettingsModal(); });
+    ['sName','sTimezone','sClientId'].forEach(id => {
+      document.getElementById(id).addEventListener('keydown', ev => { if (ev.key==='Enter') saveSettingsModal(); });
+    });
+
+    /* Timer */
+    document.getElementById('timerToggle').addEventListener('click', toggleTimer);
+    document.getElementById('timerReset').addEventListener('click',  resetTimer);
+    if (timerRunning) timerInterval = setInterval(updateTimerDisplay, 250);
+    updateTimerDisplay();
+
+    /* Add form */
+    wireCollapse('addToggle', 'addCard');
+    document.getElementById('addBtn').addEventListener('click', addEntry);
+    document.getElementById('clearBtn').addEventListener('click', clearForm);
+    ['fDesc','fHours'].forEach(id => {
+      document.getElementById(id).addEventListener('keydown', ev => { if (ev.key==='Enter') addEntry(); });
+    });
+
+    /* Entries table */
+    document.getElementById('tbody').addEventListener('click', ev => {
+      const eb = ev.target.closest('.ebtn'); const db = ev.target.closest('.dbtn');
+      if (eb) startEdit(eb.dataset.id);
+      if (db) deleteEntry(db.dataset.id);
+    });
+
+    /* Exports */
+    document.getElementById('exportWeekBtn').addEventListener('click', () => downloadCsv(false));
+    document.getElementById('exportAllBtn').addEventListener('click',  () => downloadCsv(true));
+    document.getElementById('exportXlsxBtn').addEventListener('click', () => downloadXlsx(false));
+    document.getElementById('sheetsBtn').addEventListener('click',     openSheetsDialog);
+
+    /* Sheets modal */
+    document.getElementById('sheetsClose').addEventListener('click',  closeSheetsDialog);
+    document.getElementById('sheetsCancel').addEventListener('click', closeSheetsDialog);
+    document.getElementById('sheetsOverlay').addEventListener('click', ev => { if (ev.target === ev.currentTarget) closeSheetsDialog(); });
+    document.getElementById('sheetsPushBtn').addEventListener('click', pushToSheets);
+    document.getElementById('sheetsId').addEventListener('keydown', ev => { if (ev.key==='Enter') pushToSheets(); });
+
+    /* Submit helper */
+    wireCollapse('subToggle', 'subCard');
+    document.getElementById('subCopyBtn').addEventListener('click', () => {
+      copyText(document.getElementById('submsg').textContent, 'subCopyNote');
+    });
+
+    render();
+  }
+
+  init();
+})();
+</script>
+
+</body>
+</html>
