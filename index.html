@@ -975,48 +975,63 @@
     showToast('Downloaded ' + filename);
   }
 
-  /* ── Export: XLSX ── */
+  /* ── Export: XLSX (matches Aura Tekton Time Entry Template layout) ── */
   function downloadXlsx(all) {
     if (typeof XLSX === 'undefined') { showToast('Spreadsheet library still loading — try again'); return; }
     const rows = all ? [...entries].sort((a,b)=>a.date.localeCompare(b.date)) : wkEntries();
     if (!rows.length) { showToast('No entries to export'); return; }
 
-    /* Sheet 1 — entries */
-    const eData = [
-      ['Work date','Client','Project / engagement','Jira ticket / link','Work description','Hours','Billable?'],
-      ...rows.map(e => [e.date, e.client, e.project, e.jira||'', e.description, parseFloat(fmtH(e.hours)), e.billable])
-    ];
-    const ws1 = XLSX.utils.aoa_to_sheet(eData);
-    ws1['!cols']       = [12,18,24,16,36,8,12].map(w => ({wch: w}));
-    ws1['!autofilter'] = { ref: 'A1:G1' };
-
-    /* Sheet 2 — summary */
-    const map = {};
-    for (const e of rows) {
-      const k = e.client + '\0' + e.project;
-      if (!map[k]) map[k] = { client: e.client, project: e.project, total:0, bill:0, nb:0, rev:0 };
-      const h = parseFloat(e.hours) || 0;
-      map[k].total += h;
-      if      (e.billable === 'Yes')          map[k].bill += h;
-      else if (e.billable === 'No')           map[k].nb   += h;
-      else                                    map[k].rev  += h;
-    }
-    const sRows = Object.values(map).sort((a,b) => b.total - a.total);
-    const tot   = sRows.reduce((acc,r) => ({
-      total: acc.total+r.total, bill: acc.bill+r.bill, nb: acc.nb+r.nb, rev: acc.rev+r.rev
-    }), {total:0,bill:0,nb:0,rev:0});
-
-    const sData = [
-      ['Client','Project / engagement','Total hours','Billable','Non-billable','Needs review'],
-      ...sRows.map(r => [r.client, r.project, +r.total.toFixed(2), +r.bill.toFixed(2), +r.nb.toFixed(2), +r.rev.toFixed(2)]),
-      ['TOTAL','', +tot.total.toFixed(2), +tot.bill.toFixed(2), +tot.nb.toFixed(2), +tot.rev.toFixed(2)]
-    ];
-    const ws2 = XLSX.utils.aoa_to_sheet(sData);
-    ws2['!cols'] = [20,26,12,10,12,12].map(w => ({wch: w}));
-
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws1, 'Time Entries');
-    XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
+    const ws = {};
+
+    /* Row 1 — title */
+    ws['A1'] = { v: 'AURA TEKTON | WEEKLY TIMESHEET', t: 's' };
+
+    /* Row 3 — name + week dates */
+    ws['A3'] = { v: 'Team member',           t: 's' };
+    ws['B3'] = { v: settings.name || '',      t: 's' };
+    ws['E3'] = { v: 'Week starting (Monday)', t: 's' };
+    ws['F3'] = { v: toYMD(weekStart),         t: 's' };
+    ws['G3'] = { v: 'Week ending',            t: 's' };
+    ws['H3'] = { v: toYMD(weekEnd(weekStart)),t: 's' };
+
+    /* Row 4 — timezone + status */
+    ws['A4'] = { v: 'Time zone',         t: 's' };
+    ws['B4'] = { v: settings.timezone || '', t: 's' };
+    ws['E4'] = { v: 'Submission status', t: 's' };
+    ws['F4'] = { v: 'Draft',             t: 's' };
+
+    /* Row 6 — totals with formulas */
+    ws['A6'] = { v: 'Total hours',         t: 's' };
+    ws['B6'] = { f: 'SUM(F10:F309)',       t: 'n' };
+    ws['D6'] = { v: 'Billable hours',      t: 's' };
+    ws['E6'] = { f: 'SUMIF(G10:G309,"Yes",F10:F309)', t: 'n' };
+    ws['G6'] = { v: 'Needs-review hours',  t: 's' };
+    ws['H6'] = { f: 'SUMIF(G10:G309,"Needs review",F10:F309)', t: 'n' };
+
+    /* Row 8 — instructions */
+    ws['A8'] = { v: 'Enter decimal hours (minutes ÷ 60). Type client and project names directly. One file per person per week.', t: 's' };
+
+    /* Row 9 — column headers */
+    const hdrs = ['Work date','Client','Project / engagement','Jira ticket / link','Work description','Hours','Billable?','Review note (finance)','Check'];
+    hdrs.forEach((h, c) => { ws[XLSX.utils.encode_cell({r:8, c})] = { v: h, t: 's' }; });
+
+    /* Rows 10+ — data */
+    rows.forEach((e, i) => {
+      const r = 9 + i;
+      ws[XLSX.utils.encode_cell({r, c:0})] = { v: e.date,                         t: 's' };
+      ws[XLSX.utils.encode_cell({r, c:1})] = { v: e.client,                       t: 's' };
+      ws[XLSX.utils.encode_cell({r, c:2})] = { v: e.project,                      t: 's' };
+      ws[XLSX.utils.encode_cell({r, c:3})] = { v: e.jira || '',                   t: 's' };
+      ws[XLSX.utils.encode_cell({r, c:4})] = { v: e.description,                  t: 's' };
+      ws[XLSX.utils.encode_cell({r, c:5})] = { v: parseFloat(fmtH(e.hours)),      t: 'n' };
+      ws[XLSX.utils.encode_cell({r, c:6})] = { v: e.billable,                     t: 's' };
+    });
+
+    ws['!ref']  = `A1:I${9 + rows.length}`;
+    ws['!cols'] = [12,20,24,16,38,8,13,22,8].map(w => ({wch: w}));
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Time Entries');
 
     const namePart = settings.name ? ' - ' + settings.name : '';
     const filename = all
