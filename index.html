@@ -221,6 +221,14 @@
     .ff-help {
       font-size: 11px; color: var(--fg-muted); line-height: 1.55; margin-top: 1px;
     }
+    .dur-hint {
+      font-size: 12px; font-weight: 600; color: var(--accent);
+      font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
+    .dur-row-label {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--fg-ph); margin-bottom: 3px;
+    }
     .ff-help a { color: var(--accent); text-decoration: none; }
     .ff-help a:hover { text-decoration: underline; }
 
@@ -443,6 +451,17 @@
         <div class="ff s2">
           <label for="fDesc">Work Description *</label>
           <input type="text" id="fDesc" placeholder="What you did — clear enough for a client invoice">
+        </div>
+        <div class="ff">
+          <label for="fStart">Start time</label>
+          <input type="time" id="fStart" step="60">
+        </div>
+        <div class="ff">
+          <label for="fEnd">End time</label>
+          <input type="time" id="fEnd" step="60">
+        </div>
+        <div class="ff" style="justify-content:flex-end;padding-top:18px;min-height:0;">
+          <span class="dur-hint" id="durHint"></span>
         </div>
         <div class="ff">
           <label for="fHours">Hours *</label>
@@ -871,18 +890,40 @@
     save();
     const entryWk = getWeekStart(new Date(date + 'T00:00:00'));
     if (toYMD(entryWk) !== toYMD(weekStart)) { weekStart = entryWk; saveWeek(); }
-    document.getElementById('fJira').value  = '';
-    document.getElementById('fDesc').value  = '';
-    document.getElementById('fHours').value = '';
+    document.getElementById('fJira').value   = '';
+    document.getElementById('fDesc').value   = '';
+    document.getElementById('fHours').value  = '';
+    document.getElementById('fStart').value  = '';
+    document.getElementById('fEnd').value    = '';
+    document.getElementById('durHint').textContent = '';
     document.getElementById('fDesc').focus();
     render();
   }
 
+  function calcDuration() {
+    const sv = document.getElementById('fStart').value;
+    const ev = document.getElementById('fEnd').value;
+    const hint = document.getElementById('durHint');
+    if (!sv || !ev) { hint.textContent = ''; return; }
+    let [sh, sm] = sv.split(':').map(Number);
+    let [eh, em] = ev.split(':').map(Number);
+    let startMin = sh * 60 + sm;
+    let endMin   = eh * 60 + em;
+    if (endMin <= startMin) endMin += 24 * 60; // crosses midnight
+    const mins    = endMin - startMin;
+    const decimal = Math.round((mins / 60) * 100) / 100;
+    document.getElementById('fHours').value = decimal;
+    const hh = Math.floor(mins / 60);
+    const mm = mins % 60;
+    hint.textContent = hh > 0 ? `${hh}h ${mm > 0 ? mm + 'm' : ''}`.trim() : `${mm}m`;
+  }
+
   function clearForm() {
-    ['fClient','fProject','fJira','fDesc','fHours'].forEach(id => document.getElementById(id).value = '');
+    ['fClient','fProject','fJira','fDesc','fHours','fStart','fEnd'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('fDate').value  = todayYMD();
     document.getElementById('fBill').value  = 'Yes';
     document.getElementById('ferr').textContent = '';
+    document.getElementById('durHint').textContent = '';
   }
 
   function deleteEntry(id) { entries = entries.filter(e=>e.id!==id); save(); render(); }
@@ -1246,6 +1287,8 @@
     wireCollapse('addToggle', 'addCard');
     document.getElementById('addBtn').addEventListener('click', addEntry);
     document.getElementById('clearBtn').addEventListener('click', clearForm);
+    document.getElementById('fStart').addEventListener('change', calcDuration);
+    document.getElementById('fEnd').addEventListener('change', calcDuration);
     ['fDesc','fHours'].forEach(id => {
       document.getElementById(id).addEventListener('keydown', ev => { if (ev.key==='Enter') addEntry(); });
     });
