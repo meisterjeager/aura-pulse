@@ -452,16 +452,16 @@
           <label for="fDesc">Work Description *</label>
           <input type="text" id="fDesc" placeholder="What you did — clear enough for a client invoice">
         </div>
-        <div class="ff">
-          <label for="fStart">Start time</label>
-          <input type="time" id="fStart" step="60">
-        </div>
-        <div class="ff">
-          <label for="fEnd">End time</label>
-          <input type="time" id="fEnd" step="60">
-        </div>
-        <div class="ff" style="justify-content:flex-end;padding-top:18px;min-height:0;">
-          <span class="dur-hint" id="durHint"></span>
+        <div class="ff s3" style="flex-direction:row;align-items:flex-end;gap:9px;">
+          <div class="ff" style="flex:1;min-width:0;">
+            <label for="fStart">Start time</label>
+            <input type="time" id="fStart" step="60">
+          </div>
+          <div class="ff" style="flex:1;min-width:0;">
+            <label for="fEnd">End time</label>
+            <input type="time" id="fEnd" step="60">
+          </div>
+          <span class="dur-hint" id="durHint" style="padding-bottom:8px;min-width:48px;text-align:center;flex-shrink:0;"></span>
         </div>
         <div class="ff">
           <label for="fHours">Hours *</label>
